@@ -60,8 +60,12 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+}
+
 .page-shell {
-  width: min(1120px, calc(100% - 32px));
+  width: min(1120px, calc(100% - 72px));
   margin: 0 auto;
 }
 
@@ -123,7 +127,7 @@ button {
   align-items: center;
   gap: 64px;
   min-height: calc(100vh - 96px);
-  padding: 44px 0 70px;
+  padding: 44px clamp(18px, 3vw, 44px) 70px;
   overflow: hidden;
 }
 
@@ -131,7 +135,7 @@ button {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: url("BookCover.jpeg") right center / auto min(100%, 760px) no-repeat;
+  background: url("BookCover.jpeg") right clamp(18px, 4vw, 56px) center / auto min(88%, 660px) no-repeat;
   opacity: 0.78;
   filter: saturate(1.08) contrast(1.06);
   content: "";
@@ -351,6 +355,14 @@ input:focus {
   background: linear-gradient(135deg, #fff6c7, #f0cc68 46%, #a9792a);
 }
 
+.primary-button:disabled,
+.primary-button:disabled:hover {
+  color: rgba(185, 192, 216, 0.72);
+  background: rgba(8, 11, 24, 0.76);
+  border-color: rgba(185, 192, 216, 0.2);
+  box-shadow: none;
+}
+
 .secondary-button,
 .ghost-button {
   color: var(--ink);
@@ -557,7 +569,7 @@ th {
   .hero-section {
     gap: 20px;
     min-height: auto;
-    padding-top: 320px;
+    padding: 300px 0 56px;
   }
 
   .hero-section::before {
