@@ -2,14 +2,14 @@
 
 Este guia explica como usar a versão online da página de reservas do livro **O Palácio das Pedras Negras**, de Roberto Alves.
 
-**Página pública:** https://holyfountain.github.io/BookinBookApp/
+**Página pública:** https://holyfountain.github.io/opalaciodaspedrasnegras/
 
 ## Link da página online
 
 A página pública oficial de reservas está publicada em:
 
 ```txt
-https://holyfountain.github.io/BookinBookApp/
+https://holyfountain.github.io/opalaciodaspedrasnegras/
 ```
 
 Este é o link que pode ser enviado aos leitores para reservarem exemplares. A página está alojada em GitHub Pages e fica acessível publicamente por HTTPS.
