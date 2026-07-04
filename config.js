@@ -8,3 +8,10 @@ export const firebaseConfig = {
   appId: "1:304609088310:web:4c047787581dc70ff8d997",
   measurementId: "G-X5WDK2GERE"
 };
+
+export const emailNotificationConfig = {
+  publicKey: "Lvi0hw4Mcw-0W_Wnb",
+  serviceId: "service_3wixtls",
+  templateId: "template_alrbn6n",
+  toEmail: "roberto.cm.alves@gmail.com"
+};

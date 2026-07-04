@@ -79,6 +79,12 @@ Na secção **Reservas**, o admin consegue ver:
 
 Os dados pessoais dos leitores só aparecem na área de administração. Não são públicos.
 
+## Notificações por email
+
+Quando uma reserva é criada, ou quando uma reserva não paga é atualizada por telefone duplicado, a aplicação envia uma notificação por email ao admin configurado em `config.js`.
+
+O envio usa EmailJS, tal como na app da rifa. A reserva fica guardada mesmo que o envio do email falhe temporariamente.
+
 ## Controlar pagamentos
 
 Cada reserva pode ser marcada como:
@@ -86,7 +92,7 @@ Cada reserva pode ser marcada como:
 - **paga**;
 - **não paga**.
 
-Usa o botão **Marcar paga** quando o pagamento estiver confirmado. Se precisares corrigir, usa **Marcar não paga**.
+Usa o botão **Pago** quando o pagamento estiver confirmado. Se precisares corrigir, usa **Não Pago**.
 
 Quando uma reserva está marcada como paga, uma nova reserva com o mesmo telefone cria uma nova encomenda separada, identificada pela nova data e hora.
 

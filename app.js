@@ -21,7 +21,7 @@ import {
   set,
   update
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
-import { firebaseConfig } from "./config.js";
+import { emailNotificationConfig, firebaseConfig } from "./config.js?v=20260704-email";
 
 const elements = {
   availableCount: document.querySelector("#availableCount"),
@@ -79,6 +79,7 @@ let isAdmin = false;
 let inventory = { totalCopies: 0, reservedCopies: 0, availableCopies: 0 };
 let batches = [];
 let reservations = [];
+let emailNotificationsReady = false;
 
 function setMessage(element, message, isError = false) {
   element.textContent = message;
@@ -116,6 +117,51 @@ function normalisePayment(paid) {
 function normalisePhoneKey(phone) {
   const digits = phone.replace(/\D/g, "");
   return digits || phone.toLowerCase().replace(/[^a-z0-9_-]/g, "_").slice(0, 40) || "telefone";
+}
+
+function initialiseEmailNotifications() {
+  if (emailNotificationsReady) {
+    return true;
+  }
+
+  if (!emailNotificationConfig?.publicKey || !emailNotificationConfig?.serviceId || !emailNotificationConfig?.templateId || !emailNotificationConfig?.toEmail) {
+    return false;
+  }
+
+  const emailjsClient = globalThis.emailjs;
+  if (!emailjsClient?.init || !emailjsClient?.send) {
+    console.warn("EmailJS não está disponível para enviar notificações.");
+    return false;
+  }
+
+  emailjsClient.init({ publicKey: emailNotificationConfig.publicKey });
+  emailNotificationsReady = true;
+  return true;
+}
+
+function sendReservationNotification({ name, phone, copies, reservationId, isUpdate = false }) {
+  if (!initialiseEmailNotifications()) {
+    return;
+  }
+
+  const notificationType = isUpdate ? "Reserva atualizada" : "Nova reserva";
+  const copiesLabel = `${copies} exemplar${copies === 1 ? "" : "es"}`;
+
+  globalThis.emailjs.send(emailNotificationConfig.serviceId, emailNotificationConfig.templateId, {
+    to_email: emailNotificationConfig.toEmail,
+    participant_name: name,
+    numbers_list: `${notificationType}: ${copiesLabel} de O Palácio das Pedras Negras. Telefone: ${phone}`,
+    total_numbers: copies,
+    raffle_url: globalThis.location.href,
+    book_title: "O Palácio das Pedras Negras",
+    customer_name: name,
+    customer_phone: phone,
+    reserved_copies: copies,
+    reservation_type: notificationType,
+    reservation_id: reservationId
+  }).catch((error) => {
+    console.error("Não foi possível enviar a notificação por email.", error);
+  });
 }
 
 async function getOpenReservationByPhone(phoneKey) {
@@ -255,8 +301,8 @@ function renderReservations() {
         <td>${escapeHtml(reservation.phone)}</td>
         <td>${reservation.copies}</td>
         <td>${formatDate(reservation.createdAt)}</td>
-        <td><span class="status-badge ${reservation.status === "active" ? "status-active" : "status-cancelled"}">${normaliseStatus(reservation.status)}</span></td>
-        <td>${normalisePayment(Boolean(reservation.paid))}</td>
+        <td><span class="state-badge status-badge ${reservation.status === "active" ? "status-active" : "status-cancelled"}">${normaliseStatus(reservation.status)}</span></td>
+        <td><span class="state-badge payment-badge ${reservation.paid ? "payment-paid" : "payment-unpaid"}">${normalisePayment(Boolean(reservation.paid))}</span></td>
         <td>
           <div class="reservation-actions">
             <button class="secondary-button" type="button" data-status-id="${reservation.id}">
@@ -416,6 +462,13 @@ elements.reservationForm.addEventListener("submit", async (event) => {
           updatedAt: serverTimestamp()
         });
         await setOpenReservationByPhone(phoneKey, openReservation.reservationId, nextCopies);
+        sendReservationNotification({
+          name,
+          phone,
+          copies: nextCopies,
+          reservationId: openReservation.reservationId,
+          isUpdate: true
+        });
         elements.reservationForm.reset();
         setMessage(elements.reservationMessage, "Reserva atualizada. Os exemplares foram acrescentados à reserva existente.");
         return;
@@ -439,6 +492,7 @@ elements.reservationForm.addEventListener("submit", async (event) => {
         createdAt: serverTimestamp()
       });
       await setOpenReservationByPhone(phoneKey, reservationRef.key, copies);
+      sendReservationNotification({ name, phone, copies, reservationId: reservationRef.key });
     } catch (reservationError) {
       await releaseCopies(copies);
       throw reservationError;
