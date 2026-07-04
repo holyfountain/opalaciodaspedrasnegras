@@ -63,11 +63,14 @@ const elements = {
   credentialsForm: document.querySelector("#credentialsForm"),
   newAdminUser: document.querySelector("#newAdminUser"),
   newAdminPassword: document.querySelector("#newAdminPassword"),
+  currentAdminNotifications: document.querySelector("#currentAdminNotifications"),
   credentialsMessage: document.querySelector("#credentialsMessage"),
   addAdminForm: document.querySelector("#addAdminForm"),
   additionalAdminUser: document.querySelector("#additionalAdminUser"),
   additionalAdminPassword: document.querySelector("#additionalAdminPassword"),
+  additionalAdminNotifications: document.querySelector("#additionalAdminNotifications"),
   addAdminMessage: document.querySelector("#addAdminMessage"),
+  notificationRecipientNote: document.querySelector("#notificationRecipientNote"),
   reservationRows: document.querySelector("#reservationRows"),
   batchList: document.querySelector("#batchList"),
   exportButton: document.querySelector("#exportButton"),
@@ -93,6 +96,10 @@ let isAdmin = false;
 let inventory = { totalCopies: 0, reservedCopies: 0, availableCopies: 0 };
 let batches = [];
 let reservations = [];
+let notificationSettings = {
+  adminUid: "",
+  toEmail: emailNotificationConfig.toEmail || ""
+};
 let emailNotificationsReady = false;
 let instructionsLoaded = false;
 
@@ -266,7 +273,7 @@ async function loadInstructions() {
   }
 
   try {
-    const response = await fetch("README.md?v=20260704-instructions");
+    const response = await fetch("README.md?v=20260704-notification-admin");
     if (!response.ok) {
       throw new Error(`README request failed with ${response.status}`);
     }
@@ -297,12 +304,16 @@ function normalisePhoneKey(phone) {
   return digits || phone.toLowerCase().replace(/[^a-z0-9_-]/g, "_").slice(0, 40) || "telefone";
 }
 
+function getNotificationEmail() {
+  return notificationSettings.toEmail || emailNotificationConfig.toEmail || "";
+}
+
 function initialiseEmailNotifications() {
   if (emailNotificationsReady) {
     return true;
   }
 
-  if (!emailNotificationConfig?.publicKey || !emailNotificationConfig?.serviceId || !emailNotificationConfig?.templateId || !emailNotificationConfig?.toEmail) {
+  if (!emailNotificationConfig?.publicKey || !emailNotificationConfig?.serviceId || !emailNotificationConfig?.templateId || !getNotificationEmail()) {
     return false;
   }
 
@@ -324,9 +335,10 @@ function sendReservationNotification({ name, phone, copies, reservationId, isUpd
 
   const notificationType = isUpdate ? "Reserva atualizada" : "Nova reserva";
   const copiesLabel = `${copies} exemplar${copies === 1 ? "" : "es"}`;
+  const toEmail = getNotificationEmail();
 
   globalThis.emailjs.send(emailNotificationConfig.serviceId, emailNotificationConfig.templateId, {
-    to_email: emailNotificationConfig.toEmail,
+    to_email: toEmail,
     participant_name: name,
     numbers_list: `${notificationType}: ${copiesLabel} de O Palácio das Pedras Negras. Telefone: ${phone}`,
     total_numbers: copies,
@@ -462,6 +474,10 @@ function renderAdminWorkspace() {
   elements.adminReservedBooks.textContent = inventory.reservedCopies.toString();
   elements.adminAvailableBooks.textContent = inventory.availableCopies.toString();
   elements.newAdminUser.value = currentUser?.email ?? "";
+  elements.currentAdminNotifications.checked = Boolean(currentUser?.email) && getNotificationEmail() === currentUser.email;
+  elements.notificationRecipientNote.textContent = getNotificationEmail()
+    ? `Notificações: ${getNotificationEmail()}`
+    : "Notificações: nenhum administrador definido.";
   renderReservations();
   renderBatches();
 }
@@ -527,6 +543,42 @@ async function checkAdmin(user) {
   return adminSnapshot.exists();
 }
 
+async function ensureAdminProfile(user) {
+  if (!user?.email) {
+    return;
+  }
+
+  const adminRef = ref(database, `admins/${user.uid}`);
+  const adminSnapshot = await get(adminRef);
+  const adminData = adminSnapshot.val();
+
+  if (adminData?.email === user.email) {
+    return;
+  }
+
+  try {
+    await update(adminRef, {
+      email: user.email,
+      updatedAt: serverTimestamp()
+    });
+  } catch {
+    // Older database rules may still store admins as booleans until the new rules are published.
+  }
+}
+
+async function setNotificationAdmin(user, email) {
+  if (!user?.uid || !email) {
+    throw new Error("missing_notification_admin");
+  }
+
+  await set(ref(database, "settings/notifications"), {
+    adminUid: user.uid,
+    toEmail: email,
+    updatedAt: serverTimestamp(),
+    updatedBy: currentUser.uid
+  });
+}
+
 async function ensureInventory() {
   const inventoryRef = ref(database, "settings/inventory");
   const snapshot = await get(inventoryRef);
@@ -560,6 +612,22 @@ function startPublicListeners() {
     }
   }, () => {
     elements.availabilityNote.textContent = "Não foi possível carregar o inventário.";
+  });
+
+  onValue(ref(database, "settings/notifications"), (snapshot) => {
+    const data = snapshot.val() ?? {};
+    notificationSettings = {
+      adminUid: data.adminUid || "",
+      toEmail: data.toEmail || emailNotificationConfig.toEmail || ""
+    };
+    if (isAdmin) {
+      renderAdminWorkspace();
+    }
+  }, () => {
+    notificationSettings = {
+      adminUid: "",
+      toEmail: emailNotificationConfig.toEmail || ""
+    };
   });
 }
 
@@ -815,8 +883,9 @@ elements.credentialsForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const email = elements.newAdminUser.value.trim();
   const password = elements.newAdminPassword.value;
+  const shouldSetNotifications = elements.currentAdminNotifications.checked;
 
-  if (email === currentUser.email && !password) {
+  if (email === currentUser.email && !password && (!shouldSetNotifications || notificationSettings.adminUid === currentUser.uid)) {
     setMessage(elements.credentialsMessage, "Não há alterações para guardar.", true);
     return;
   }
@@ -824,6 +893,12 @@ elements.credentialsForm.addEventListener("submit", async (event) => {
   try {
     if (email && email !== currentUser.email) {
       await updateEmail(currentUser, email);
+    }
+
+    await ensureAdminProfile(currentUser);
+
+    if (shouldSetNotifications || notificationSettings.adminUid === currentUser.uid) {
+      await setNotificationAdmin(currentUser, currentUser.email);
     }
 
     if (password) {
@@ -841,6 +916,7 @@ elements.addAdminForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const email = elements.additionalAdminUser.value.trim();
   const password = elements.additionalAdminPassword.value;
+  const shouldSetNotifications = elements.additionalAdminNotifications.checked;
 
   if (!isAdmin || !adminCreationAuth) {
     setMessage(elements.addAdminMessage, "É necessário entrar como administrador para adicionar outro administrador.", true);
@@ -850,14 +926,24 @@ elements.addAdminForm.addEventListener("submit", async (event) => {
   try {
     const credential = await createUserWithEmailAndPassword(adminCreationAuth, email, password);
     try {
-      await set(ref(database, `admins/${credential.user.uid}`), true);
+      await set(ref(database, `admins/${credential.user.uid}`), {
+        email: credential.user.email,
+        createdAt: serverTimestamp(),
+        createdBy: currentUser.uid
+      });
+      if (shouldSetNotifications) {
+        await setNotificationAdmin(credential.user, credential.user.email);
+      }
     } catch (permissionError) {
+      await remove(ref(database, `admins/${credential.user.uid}`)).catch(() => {});
       await deleteUser(credential.user).catch(() => {});
       throw permissionError;
     }
     await signOut(adminCreationAuth);
     elements.addAdminForm.reset();
-    setMessage(elements.addAdminMessage, "Administrador adicionado. Pode entrar com o email e a palavra-passe definidos.");
+    setMessage(elements.addAdminMessage, shouldSetNotifications
+      ? "Administrador adicionado e definido para receber notificações."
+      : "Administrador adicionado. O destinatário das notificações foi mantido.");
   } catch (error) {
     await signOut(adminCreationAuth).catch(() => {});
     const message = error?.code === "auth/email-already-in-use"
@@ -1057,6 +1143,7 @@ async function init() {
 
     if (isAdmin) {
       await ensureInventory();
+      await ensureAdminProfile(user);
       startAdminListeners();
     } else {
       stopAdminListeners();

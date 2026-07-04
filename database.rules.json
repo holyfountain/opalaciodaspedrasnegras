@@ -5,8 +5,8 @@
     "admins": {
       "$uid": {
         ".read": "auth != null && root.child('admins').child(auth.uid).exists()",
-        ".write": "auth != null && root.child('admins').child(auth.uid).exists() && newData.val() == true",
-        ".validate": "newData.isBoolean()"
+        ".write": "auth != null && root.child('admins').child(auth.uid).exists()",
+        ".validate": "newData.isBoolean() || (newData.hasChildren(['email']) && newData.child('email').isString() && newData.child('email').val().length > 3 && newData.child('email').val().length <= 120)"
       }
     },
     "settings": {
@@ -14,6 +14,11 @@
         ".read": true,
         ".write": "(auth != null && root.child('admins').child(auth.uid).exists()) || (data.exists() && newData.child('totalCopies').val() == data.child('totalCopies').val() && newData.child('reservedCopies').isNumber() && newData.child('reservedCopies').val() >= data.child('reservedCopies').val() && newData.child('reservedCopies').val() <= data.child('reservedCopies').val() + 20 && newData.child('reservedCopies').val() <= data.child('totalCopies').val())",
         ".validate": "newData.hasChildren(['totalCopies', 'reservedCopies']) && newData.child('totalCopies').isNumber() && newData.child('reservedCopies').isNumber() && newData.child('totalCopies').val() >= 0 && newData.child('reservedCopies').val() >= 0 && newData.child('reservedCopies').val() <= newData.child('totalCopies').val()"
+      },
+      "notifications": {
+        ".read": true,
+        ".write": "auth != null && root.child('admins').child(auth.uid).exists()",
+        ".validate": "newData.hasChildren(['adminUid', 'toEmail']) && newData.child('adminUid').isString() && root.child('admins').child(newData.child('adminUid').val()).child('email').val() == newData.child('toEmail').val()"
       }
     },
     "batches": {

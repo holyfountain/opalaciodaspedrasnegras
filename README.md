@@ -103,11 +103,20 @@ Se a reserva anterior estiver marcada como paga, uma nova reserva com o mesmo te
 
 ## Notificações por email
 
-Sempre que uma reserva é criada ou atualizada por telefone duplicado, a aplicação envia uma notificação por email ao endereço configurado na aplicação.
+Sempre que uma reserva é criada ou atualizada por telefone duplicado, a aplicação envia uma notificação por email ao administrador definido para notificações.
 
 As notificações são enviadas através de um serviço de email externo. A reserva continua guardada mesmo que o envio do email falhe temporariamente.
 
-Importante: criar um novo administrador não altera o destinatário das notificações. As notificações continuam a ser enviadas para o endereço configurado na aplicação.
+O email de notificações só pode ser o email de um administrador configurado na aplicação.
+
+Para definir o administrador atual como destinatário:
+
+1. Entra em **Administração**.
+2. Na secção **Administradores**, vai a **O meu acesso**.
+3. Seleciona **Enviar notificações para este administrador**.
+4. Clica em **Atualizar acesso**.
+
+Ao criar um novo administrador, também podes selecionar **Enviar notificações para este novo administrador**. Se não selecionares essa opção, o administrador que já recebia notificações mantém-se como destinatário.
 
 ## Exportar reservas
 
@@ -131,6 +140,7 @@ Podes alterar:
 
 - o email atual;
 - a palavra-passe, preenchendo o campo **Nova palavra-passe**.
+- se este administrador deve receber notificações de novas reservas.
 
 Se não quiseres mudar a palavra-passe, deixa esse campo vazio.
 
@@ -142,7 +152,8 @@ Usa esta área para criar outro acesso de administração.
 
 1. Escreve o email do novo administrador.
 2. Define uma palavra-passe inicial com pelo menos 6 caracteres.
-3. Clica em **Adicionar Administrador**.
+3. Se quiseres que este novo administrador receba notificações, seleciona **Enviar notificações para este novo administrador**.
+4. Clica em **Adicionar Administrador**.
 
 Depois de criado, o novo administrador pode entrar pela mesma opção **Administração** da página pública.
 

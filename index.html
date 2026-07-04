@@ -147,6 +147,7 @@
 
           <section class="admin-panel admin-access-panel">
             <h3>Administradores</h3>
+            <p class="admin-helper" id="notificationRecipientNote">Notificações: a carregar...</p>
             <div class="admin-access-grid">
               <form id="credentialsForm" class="compact-form admin-action-card">
                 <div class="admin-action-title">
@@ -160,6 +161,10 @@
                 <label>
                   Nova palavra-passe
                   <input id="newAdminPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Opcional" />
+                </label>
+                <label class="checkbox-field">
+                  <input id="currentAdminNotifications" type="checkbox" />
+                  Enviar notificações para este administrador
                 </label>
                 <button class="secondary-button" type="submit">Atualizar acesso</button>
                 <p class="form-message" id="credentialsMessage" role="status"></p>
@@ -177,6 +182,10 @@
                 <label>
                   Palavra-passe inicial
                   <input id="additionalAdminPassword" type="password" autocomplete="new-password" required minlength="6" />
+                </label>
+                <label class="checkbox-field">
+                  <input id="additionalAdminNotifications" type="checkbox" />
+                  Enviar notificações para este novo administrador
                 </label>
                 <button class="secondary-button" type="submit">Adicionar Administrador</button>
                 <p class="form-message" id="addAdminMessage" role="status"></p>
@@ -236,6 +245,6 @@
     </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-    <script type="module" src="app.js?v=20260704-guide-link"></script>
+    <script type="module" src="app.js?v=20260704-notification-admin"></script>
   </body>
 </html>
