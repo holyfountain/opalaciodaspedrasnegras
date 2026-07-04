@@ -2,11 +2,7 @@
 
 Este guia explica como usar a aplicação de reservas do livro **O Palácio das Pedras Negras**, de Roberto Alves.
 
-Página pública:
-
-```txt
-https://holyfountain.github.io/opalaciodaspedrasnegras/
-```
+Página pública: [https://holyfountain.github.io/opalaciodaspedrasnegras/](https://holyfountain.github.io/opalaciodaspedrasnegras/)
 
 ## Visão geral
 
