@@ -70,7 +70,7 @@ Na secção **Reservas**, cada linha mostra:
 - **Data**: data e hora da reserva;
 - **Estado**: `ativa` ou `cancelada`;
 - **Pagamento**: `paga` ou `não paga`;
-- **Ação**: botões para cancelar/repor e alterar pagamento.
+- **Ação**: botões para cancelar/repor, alterar pagamento e apagar a reserva.
 
 As etiquetas de estado e pagamento são destacadas por cor para facilitar a leitura.
 
@@ -94,6 +94,14 @@ Usa estes botões na coluna **Ação**:
 - **Repor**: reativa uma reserva cancelada, se ainda houver stock suficiente.
 
 Usa **Cancelar** quando uma pessoa desistir, quando a reserva for duplicada por engano ou quando a encomenda já não deve contar para o stock.
+
+## Apagar uma reserva
+
+Usa **Apagar** apenas quando quiseres remover completamente uma reserva da aplicação.
+
+Ao apagar uma reserva ativa, os exemplares voltam ao stock disponível. Ao apagar uma reserva cancelada, o stock não muda.
+
+A aplicação pede confirmação antes de apagar. Depois de confirmada, esta ação não pode ser anulada.
 
 ## Reservas duplicadas pelo telefone
 

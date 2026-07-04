@@ -273,7 +273,7 @@ async function loadInstructions() {
   }
 
   try {
-    const response = await fetch("README.md?v=20260704-phone-validation");
+    const response = await fetch("README.md?v=20260704-delete-reservation");
     if (!response.ok) {
       throw new Error(`README request failed with ${response.status}`);
     }
@@ -521,6 +521,7 @@ function renderReservations() {
             <button class="secondary-button" type="button" data-payment-id="${reservation.id}">
               ${reservation.paid ? "Não Pago" : "Pago"}
             </button>
+            <button class="danger-button" type="button" data-delete-id="${reservation.id}">Apagar</button>
           </div>
         </td>
       </tr>
@@ -978,8 +979,65 @@ elements.addAdminForm.addEventListener("submit", async (event) => {
 });
 
 elements.reservationRows.addEventListener("click", async (event) => {
+  const deleteButton = event.target.closest("button[data-delete-id]");
   const statusButton = event.target.closest("button[data-status-id]");
   const paymentButton = event.target.closest("button[data-payment-id]");
+
+  if (deleteButton) {
+    const reservation = reservations.find((item) => item.id === deleteButton.dataset.deleteId);
+    if (!reservation) {
+      return;
+    }
+
+    if (!confirm(`Apagar definitivamente a reserva de ${reservation.name}? Esta ação não pode ser anulada.`)) {
+      return;
+    }
+
+    const inventoryRef = ref(database, "settings/inventory");
+    const copies = Number(reservation.copies ?? 0);
+    const shouldReleaseCopies = reservation.status === "active" && copies > 0;
+
+    try {
+      if (shouldReleaseCopies) {
+        const transactionResult = await runTransaction(inventoryRef, (currentInventory) => {
+          const data = currentInventory ?? { totalCopies: 0, reservedCopies: 0 };
+          return {
+            ...data,
+            reservedCopies: Math.max(Number(data.reservedCopies ?? 0) - copies, 0),
+            updatedAt: serverTimestamp()
+          };
+        });
+
+        if (!transactionResult.committed) {
+          setMessage(elements.loginMessage, "Não foi possível devolver os exemplares ao stock antes de apagar a reserva.", true);
+          return;
+        }
+      }
+
+      try {
+        await remove(ref(database, `reservations/${reservation.id}`));
+        const phoneKey = reservation.phoneKey ?? normalisePhoneKey(reservation.phone ?? "");
+        await removeOpenReservationByPhone(phoneKey, reservation.id);
+        setMessage(elements.loginMessage, "Reserva apagada definitivamente.");
+      } catch (deleteError) {
+        if (shouldReleaseCopies) {
+          await runTransaction(inventoryRef, (currentInventory) => {
+            const data = currentInventory ?? { totalCopies: 0, reservedCopies: 0 };
+            return {
+              ...data,
+              reservedCopies: Number(data.reservedCopies ?? 0) + copies,
+              updatedAt: serverTimestamp()
+            };
+          });
+        }
+        throw deleteError;
+      }
+    } catch {
+      setMessage(elements.loginMessage, "Não foi possível apagar a reserva.", true);
+    }
+
+    return;
+  }
 
   if (paymentButton) {
     const reservation = reservations.find((item) => item.id === paymentButton.dataset.paymentId);
