@@ -40,6 +40,7 @@ const elements = {
   instructionsDialog: document.querySelector("#instructionsDialog"),
   instructionsOpenButton: document.querySelector("#instructionsOpenButton"),
   instructionsCloseButton: document.querySelector("#instructionsCloseButton"),
+  instructionsLayout: document.querySelector("#instructionsLayout"),
   instructionsContent: document.querySelector("#instructionsContent"),
   instructionsIndex: document.querySelector("#instructionsIndex"),
   aboutDialog: document.querySelector("#aboutDialog"),
@@ -252,7 +253,7 @@ function renderInstructionsIndex(headings) {
     <div>
       ${headings
         .filter((heading) => heading.level === 2 || heading.level === 3)
-        .map((heading) => `<a class="index-level-${heading.level}" href="#${heading.id}">${escapeHtml(heading.text)}</a>`)
+        .map((heading) => `<a class="index-level-${heading.level}" href="#${heading.id}" data-target-id="${heading.id}">${escapeHtml(heading.text)}</a>`)
         .join("")}
     </div>
   `;
@@ -709,6 +710,24 @@ elements.instructionsOpenButton.addEventListener("click", async () => {
 
 elements.instructionsCloseButton.addEventListener("click", () => {
   elements.instructionsDialog.close();
+});
+
+elements.instructionsIndex.addEventListener("click", (event) => {
+  const link = event.target.closest("a[href^='#']");
+  if (!link) {
+    return;
+  }
+
+  event.preventDefault();
+  const target = document.getElementById(link.dataset.targetId);
+  if (!target) {
+    return;
+  }
+
+  elements.instructionsContent.scrollTo({
+    top: target.offsetTop - elements.instructionsContent.offsetTop - 18,
+    behavior: "auto"
+  });
 });
 
 elements.loginForm.addEventListener("submit", async (event) => {

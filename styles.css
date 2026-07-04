@@ -434,17 +434,19 @@ input:focus {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(190px, 240px);
   gap: 22px;
-  max-height: min(680px, calc(100vh - 170px));
+  height: min(680px, calc(100vh - 170px));
   margin-top: 20px;
-  overflow-y: auto;
-  scroll-behavior: smooth;
+  overflow: hidden;
 }
 
 .instructions-content {
   display: grid;
   gap: 12px;
   min-width: 0;
+  min-height: 0;
   padding-right: 8px;
+  overflow-y: auto;
+  scroll-behavior: auto;
 }
 
 .instructions-index {
@@ -768,6 +770,11 @@ th {
     position: static;
     max-height: 220px;
     order: -1;
+  }
+
+  .instructions-layout {
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
   }
 
   .hero-section {
